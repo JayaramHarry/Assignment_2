@@ -252,14 +252,22 @@ app.get(
 app.get("/user/tweets/", authenticateToken, async (request, response) => {
   const { username } = request;
   const getTweetQuery = `
-    SELECT tweet, 
-            SUM(like.like_id) AS likes,
-            SUM(reply.reply_id) AS replies,
-            date_time
-     FROM tweet NATURAL JOIN like
-        NATURAL JOIN reply
-        INNER JOIN follower ON reply.user_id = follower.follower_id
-        WHERE user_id = '${1}';`;
+    SELECT
+   tweet,
+   (
+       SELECT COUNT(like_id)
+       FROM like
+       WHERE tweet_id=tweet.tweet_id
+   ) AS likes,
+   (
+       SELECT COUNT(reply_id)
+       FROM reply
+       WHERE tweet_id=tweet.tweet_id
+   ) AS replies,
+   date_time AS dateTime
+   FROM tweet
+   WHERE user_id= ${1}
+   `;
   const dbResponse = await db.all(getTweetQuery);
   response.send(dbResponse);
 });
