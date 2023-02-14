@@ -251,7 +251,15 @@ app.get(
 
 app.get("/user/tweets/", authenticateToken, async (request, response) => {
   const { username } = request;
-  const getTweetQuery = `
+  const getUserQuery = `
+  SELECT * FROM user 
+  WHERE username = '${username}';`;
+  const dbRes = await db.get(getUserQuery);
+  if (dbRes === undefined) {
+    response.status(400);
+    response.send("Invalid User");
+  } else {
+    const getTweetQuery = `
     SELECT
    tweet,
    (
@@ -266,12 +274,11 @@ app.get("/user/tweets/", authenticateToken, async (request, response) => {
    ) AS replies,
    date_time AS dateTime
    FROM tweet
-   WHERE user_id= ${1}
-   `;
-  const dbResponse = await db.all(getTweetQuery);
-  response.send(dbResponse);
+   WHERE user_id= ${dbRes.user_id};`;
+    const dbResponse = await db.all(getTweetQuery);
+    response.send(dbResponse);
+  }
 });
-
 //API 10
 app.post("/user/tweets/", authenticateToken, async (request, response) => {
   const { tweet } = request.body;
